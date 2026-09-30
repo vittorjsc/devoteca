@@ -1,0 +1,3 @@
+# Optional: administrator account forwarded by your trusted deployment gateway.
+# Local sign-in uses seedy@sites.test by default.
+DEVOTECA_ADMIN_EMAIL=seedy@sites.test
