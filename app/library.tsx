@@ -1,6 +1,8 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Dialog as D } from "radix-ui";
+import { TranslationPanel } from "@/components/translation-panel";
+import { Languages } from "lucide-react";
 import {
   BookOpen,
   Library as LibraryIcon,
@@ -203,6 +205,7 @@ export default function Library() {
   const [showCategories, setShowCategories] = useState(false),
     [categoryName, setCategoryName] = useState(""),
     [categoryColor, setCategoryColor] = useState("blue");
+  const [translation, setTranslation] = useState<Resource | null>(null);
   const [selected, setSelected] = useState<Resource | null>(null),
     [comments, setComments] = useState<Comment[]>([]),
     [comment, setComment] = useState(""),
@@ -1042,6 +1045,16 @@ export default function Library() {
                                 </button>
                               ))}
                           </div>
+                          <div className="card-translation">
+                            <button
+                              className="text-btn"
+                              aria-label={"Traduzir " + r.title}
+                              onClick={() => setTranslation(r)}
+                            >
+                              <Languages size={15} />
+                              Traduzir
+                            </button>
+                          </div>
                           <footer className="card-footer">
                             <span className="author">
                               <span className="tiny-avatar">
@@ -1414,6 +1427,13 @@ export default function Library() {
               Adicionado por {selected.author_name} · {date(selected.created)}
             </p>
             <div className="detail-links">
+              <button
+                className="btn secondary"
+                onClick={() => setTranslation(selected)}
+              >
+                <Languages size={16} />
+                Traduzir
+              </button>
               {selected.url && (
                 <a
                   className="btn primary"
@@ -1652,6 +1672,17 @@ export default function Library() {
             </button>
           </div>
         </div>
+      </Modal>
+      <Modal
+        open={!!translation}
+        onClose={() => setTranslation(null)}
+        title="Traduzir material"
+        description="Escolha a página completa ou um trecho para ler em português."
+        wide
+      >
+        {translation && (
+          <TranslationPanel key={translation.id} material={translation} />
+        )}
       </Modal>
       {toast && (
         <div className="toast" role="status">

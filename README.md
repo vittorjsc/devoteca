@@ -18,6 +18,7 @@ O projeto organiza repositórios GitHub, artigos, cursos, vídeos, ferramentas e
 - Anexos de até 20 MB, com download protegido pelo acesso à biblioteca.
 - Favoritos e progresso de leitura separados por usuário.
 - Comentários compartilhados e permissões de edição por autor ou administrador.
+- Tradução de páginas, descrições e trechos para português pelo Google Tradutor, em outra aba.
 - Importação de até 50 links por lote e exportação do catálogo em JSON.
 - Interface responsiva em português.
 
@@ -65,11 +66,12 @@ Em outro terminal:
 
 ```sh
 npm run test:integration
+node --experimental-strip-types --test tests/translation.test.mjs
 ```
 
 Os testes cobrem login obrigatório, cadastro/edição/exclusão, duplicatas, URLs inválidas, isolamento entre autores, favoritos e progresso individuais, comentários, exclusão em cascata, proteção de origem e envio/download de anexos. O script recusa destinos fora de localhost. Os cabeçalhos de identidade simulados são exclusivos do teste do Worker local.
 
-O workflow de CI instala as dependências fixadas no lockfile, verifica os tipos e compila a aplicação. Os testes de integração são executados com o Worker e o banco locais pelo procedimento acima.
+O workflow de CI instala as dependências fixadas no lockfile, verifica os tipos, testa a criação dos links de tradução e compila a aplicação. Os testes de integração são executados com o Worker e o banco locais pelo procedimento acima.
 
 ## Estrutura do código
 
@@ -92,6 +94,7 @@ A autenticação publicada depende do gateway do Sites: ele verifica os convites
 Este repositório contém o código e o esquema, sem dados do grupo, convites, credenciais, anexos ou identificação da hospedagem privada. A configuração `.openai/hosting.json` declara apenas os bindings lógicos `DB` e `BUCKET`. Ao provisionar uma nova instância no Sites, use a identidade e os recursos retornados para essa nova instância.
 
 - Metadados do GitHub são consultados somente para repositórios públicos.
+- A tradução abre o Google Tradutor por escolha do usuário. Documentos devem ser baixados e selecionados manualmente no tradutor; nenhum anexo é enviado automaticamente.
 - A exportação JSON contém os metadados do catálogo; anexos e comentários não fazem parte de um backup completo.
 - Os formatos aceitos de anexo incluem PDF, TXT, MD, DOC/DOCX, PPT/PPTX, XLS/XLSX, CSV, ZIP e imagens PNG/JPEG/WebP.
 - A versão usa Vinext em beta; o lockfile registra as versões utilizadas.
