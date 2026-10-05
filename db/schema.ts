@@ -1,3 +1,6 @@
+// Intentionally empty by default.
+// Add Drizzle tables here when the site actually needs a database.
+// See examples/d1/db/schema.ts for an opt-in example.
 import {
   sqliteTable,
   text,
@@ -86,4 +89,26 @@ export const comments = sqliteTable(
     created: text("created").notNull(),
   },
   (t) => [index("idx_comments_resource_created").on(t.resource, t.created)],
+);
+export const projectIdeas = sqliteTable(
+  "project_ideas",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+    inspiration: text("inspiration").notNull(),
+    links: text("links").notNull(),
+    tags: text("tags").notNull(),
+    nextSteps: text("next_steps").notNull(),
+    status: text("status").notNull(),
+    sourceResource: text("source_resource").references(() => resources.id, {
+      onDelete: "set null",
+    }),
+    author: text("author")
+      .notNull()
+      .references(() => members.id),
+    created: text("created").notNull(),
+    updated: text("updated").notNull(),
+  },
+  (t) => [index("idx_project_ideas_status_updated").on(t.status, t.updated)],
 );

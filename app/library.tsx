@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Dialog as D } from "radix-ui";
 import { TranslationPanel } from "@/components/translation-panel";
+import { ProjectIdeas } from "@/components/project-ideas";
 import { Languages } from "lucide-react";
 import {
   BookOpen,
@@ -37,6 +38,7 @@ import {
   LogOut,
   Hash,
   Command,
+  Lightbulb,
 } from "lucide-react";
 type Resource = {
   id: string;
@@ -206,6 +208,7 @@ export default function Library() {
     [categoryName, setCategoryName] = useState(""),
     [categoryColor, setCategoryColor] = useState("blue");
   const [translation, setTranslation] = useState<Resource | null>(null);
+  const [projectCreateRequest, setProjectCreateRequest] = useState(0);
   const [selected, setSelected] = useState<Resource | null>(null),
     [comments, setComments] = useState<Comment[]>([]),
     [comment, setComment] = useState(""),
@@ -297,6 +300,7 @@ export default function Library() {
   );
   const activeCategory = categories.find((c) => c.id === category);
   const navigate = (v: string, c = "") => {
+    setProjectCreateRequest(0);
     setView(v);
     setCategory(c);
     setTag("");
@@ -582,6 +586,7 @@ export default function Library() {
           ].map((n) => (
             <button
               key={n.id}
+              data-navigation={n.id}
               className={
                 "nav-item " + (view === n.id && !category ? "active" : "")
               }
@@ -598,6 +603,16 @@ export default function Library() {
           >
             <Users size={18} />
             <span>Pessoas</span>
+          </button>
+          <button
+            className={
+              "nav-item project-nav " + (view === "projects" ? "active" : "")
+            }
+            onClick={() => navigate("projects")}
+            aria-current={view === "projects" ? "page" : undefined}
+          >
+            <Lightbulb size={18} />
+            <span>Ideias de projetos</span>
           </button>
         </nav>
         <div className="nav-section">
@@ -680,7 +695,13 @@ export default function Library() {
           <div className="breadcrumb">
             <span>Nosso espaço</span>
             <span>/</span>
-            <strong>{view === "members" ? "Pessoas" : "Biblioteca"}</strong>
+            <strong>
+              {view === "members"
+                ? "Pessoas"
+                : view === "projects"
+                  ? "Projetos"
+                  : "Biblioteca"}
+            </strong>
           </div>
           <div className="top-actions">
             <span className="private-badge">
@@ -699,7 +720,9 @@ export default function Library() {
         <main className="content">
           <div className="page-heading">
             <div>
-              <p className="eyebrow">CONHECIMENTO COMPARTILHADO</p>
+              {view !== "projects" && (
+                <p className="eyebrow">CONHECIMENTO COMPARTILHADO</p>
+              )}
               <h1>
                 {view === "members"
                   ? "Pessoas do grupo"
@@ -710,26 +733,37 @@ export default function Library() {
                         favorites: "Seus favoritos",
                         reading: "Estou estudando",
                         mine: "Minhas contribuições",
+                        projects: "Ideias de projetos",
                       } as Record<string, string>
                     )[view]}
               </h1>
               <p>
                 {view === "members"
                   ? "Quem já entrou neste espaço e está construindo a biblioteca com você."
-                  : view === "all" && !category
-                    ? "Tudo o que vale guardar, em um só lugar."
-                    : view === "favorites"
-                      ? "As referências que você quer ter sempre por perto."
-                      : view === "reading"
-                        ? "Continue de onde parou."
-                        : view === "mine"
-                          ? "Os materiais que você compartilhou com o grupo."
-                          : "Explore os materiais desta categoria."}
+                  : view === "projects"
+                    ? "Das referências às próprias criações. Planejem o que vocês querem construir juntos."
+                    : view === "all" && !category
+                      ? "Tudo o que vale guardar, em um só lugar."
+                      : view === "favorites"
+                        ? "As referências que você quer ter sempre por perto."
+                        : view === "reading"
+                          ? "Continue de onde parou."
+                          : view === "mine"
+                            ? "Os materiais que você compartilhou com o grupo."
+                            : "Explore os materiais desta categoria."}
               </p>
             </div>
-            <button className="btn primary" onClick={add} disabled={!data}>
+            <button
+              className="btn primary"
+              onClick={
+                view === "projects"
+                  ? () => setProjectCreateRequest((v) => v + 1)
+                  : add
+              }
+              disabled={!data}
+            >
               <Plus size={18} />
-              Adicionar material
+              {view === "projects" ? "Nova ideia" : "Adicionar material"}
             </button>
           </div>
           {error && (
@@ -740,7 +774,14 @@ export default function Library() {
               </button>
             </div>
           )}
-          {view === "members" ? (
+          <div hidden={view !== "projects"}>
+            <ProjectIdeas
+              user={data?.user ?? null}
+              resources={resources}
+              createRequest={projectCreateRequest}
+            />
+          </div>
+          {view === "projects" ? null : view === "members" ? (
             <>
               <div className="section-title">
                 <h2>

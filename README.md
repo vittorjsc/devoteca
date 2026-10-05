@@ -19,6 +19,8 @@ O projeto organiza repositórios GitHub, artigos, cursos, vídeos, ferramentas e
 - Favoritos e progresso de leitura separados por usuário.
 - Comentários compartilhados e permissões de edição por autor ou administrador.
 - Tradução de páginas, descrições e trechos para português pelo Google Tradutor, em outra aba.
+- Ideias de projetos com nome, descrição, inspiração, links, tecnologias, próximos passos e status.
+- Edição das ideias por todos os convidados, referência a materiais do acervo, busca, filtros e exportação JSON.
 - Importação de até 50 links por lote e exportação do catálogo em JSON.
 - Interface responsiva em português.
 
@@ -46,6 +48,7 @@ cd devoteca
 npm run install:ci
 npm run build
 npm run db:migrate:local
+npm run db:migrate:projects
 npm run dev
 ```
 
@@ -66,10 +69,13 @@ Em outro terminal:
 
 ```sh
 npm run test:integration
+npm run test:projects
 node --experimental-strip-types --test tests/translation.test.mjs
 ```
 
 Os testes cobrem login obrigatório, cadastro/edição/exclusão, duplicatas, URLs inválidas, isolamento entre autores, favoritos e progresso individuais, comentários, exclusão em cascata, proteção de origem e envio/download de anexos. O script recusa destinos fora de localhost. Os cabeçalhos de identidade simulados são exclusivos do teste do Worker local.
+
+Os testes de projetos verificam o acesso privado, a edição compartilhada, a validação dos campos e links, a exclusão pelo autor e a preservação das ideias quando um material de inspiração é removido. Para uma cópia local já existente, aplique a migração `db:migrate:projects` apenas uma vez antes de usar a nova área. Na interface, abra **Ideias de projetos → Nova ideia**. Todos os convidados podem editar; a exclusão é reservada ao autor ou administrador.
 
 O workflow de CI instala as dependências fixadas no lockfile, verifica os tipos, testa a criação dos links de tradução e compila a aplicação. Os testes de integração são executados com o Worker e o banco locais pelo procedimento acima.
 
