@@ -21,6 +21,13 @@ colors:
   field-text: "#27384a"
   selected-background: "#e8eefc"
   selected-text: "#2547b6"
+  dark-canvas: "#0d1620"
+  dark-surface: "#172331"
+  dark-ink: "#e7eef5"
+  dark-secondary: "#b8c8d8"
+  dark-line: "#344a5e"
+  dark-control-border: "#60788c"
+  dark-accent: "#a4b7ff"
 typography:
   headline:
     fontSize: "31px"
@@ -87,6 +94,10 @@ O nome Devoteca e o português são compromissos do produto. A densidade é prá
 - Estados de foco visíveis e ações de formulário protegidas durante o salvamento.
 
 ## Colors
+
+O tema é selecionado pelo atributo `data-theme` em `html`: `light` mantém a paleta original e `dark` usa os tokens `dark-*`. O tema escuro conserva a navegação navy/lime e as ações azuis, usa superfícies navy claras em relação ao fundo e texto claro. As cores legadas usam aliases por função (`--dm-bg-*`, `--dm-text-*`, `--dm-line-*`) com o valor claro como fallback, incluindo tons de estados e categorias. Fotos e imagens de usuários não são invertidas. Campos e controles usam a borda escura de maior contraste; divisórias usam `dark-line`.
+
+A lua/sol no cabeçalho alterna entre os temas. A preferência local `devoteca-theme` é restaurada antes da pintura pelo provider, sem trocar dados do grupo ou rascunhos. O padrão é claro; os diálogos em portal também herdam o atributo de `html`.
 
 Os valores normativos estão no frontmatter; a origem é `app/globals.css`.
 

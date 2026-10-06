@@ -5,6 +5,7 @@ import { TranslationPanel } from "@/components/translation-panel";
 import { ProjectIdeas } from "@/components/project-ideas";
 import { Community } from "@/components/community";
 import { CommunityAvatar } from "@/components/community-avatar";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Languages } from "lucide-react";
 import {
   BookOpen,
@@ -723,6 +724,7 @@ export default function Library() {
             </strong>
           </div>
           <div className="top-actions">
+            <ThemeToggle />
             <button
               className="text-btn top-profile-btn"
               onClick={() => data && openProfile(data.user.id)}

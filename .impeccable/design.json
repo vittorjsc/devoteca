@@ -58,7 +58,7 @@
   ],
   "narrative": {
     "rules": [],
-    "overview": "A direção atual preserva navegação azul-marinho, indicação ativa em verde-lima e superfícies claras para ler, buscar e contribuir. Captura a interface existente após o refinamento de UX, com o nome Devoteca e o português preservados.",
+    "overview": "A direção atual preserva navegação azul-marinho, indicação ativa em verde-lima e superfícies claras para ler, buscar e contribuir. Captura a interface existente após o refinamento de UX, com o nome Devoteca e o português preservados. A variante escura usa fundo #0d1620, superfícies #172331 e texto claro, com seleção explícita de tema no cabeçalho e preferência local.",
     "donts": [
       "Não copie cinzas da barra lateral para texto auxiliar claro.",
       "Não remova rótulos da navegação mobile.",
@@ -72,7 +72,7 @@
     "keyCharacteristics": [
       "Cinco destinos consistentes",
       "Azul para ações e verde-lima para identidade",
-      "Conteúdo claro e descrições legíveis",
+      "Temas claro e escuro com descrições legíveis",
       "Foco visível e salvamento protegido"
     ],
     "northStar": "Biblioteca de trabalho compartilhada"
