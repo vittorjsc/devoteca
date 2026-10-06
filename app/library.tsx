@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useId, useRef } from "react";
 import { Dialog as D } from "radix-ui";
 import { TranslationPanel } from "@/components/translation-panel";
 import { ProjectIdeas } from "@/components/project-ideas";
@@ -165,19 +165,20 @@ function Modal({
   children: React.ReactNode;
   wide?: boolean;
 }) {
+  const descriptionId = useId();
   return (
     <D.Root open={open} onOpenChange={(v) => !v && onClose()}>
       <D.Portal>
         <D.Overlay className="overlay" />
         <D.Content
           className={"modal " + (wide ? "wide" : "")}
-          aria-describedby={description ? "dialog-description" : undefined}
+          aria-describedby={description ? descriptionId : undefined}
         >
           <header className="modal-header">
             <div>
               <D.Title>{title}</D.Title>
               {description && (
-                <D.Description id="dialog-description">
+                <D.Description id={descriptionId}>
                   {description}
                 </D.Description>
               )}
@@ -199,6 +200,10 @@ export default function Library() {
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [toast, setToast] = useState("");
+  const [formBaseline, setFormBaseline] = useState(JSON.stringify(empty));
+  const formErrorRef = useRef<HTMLParagraphElement>(null);
+  const [searchRequest, setSearchRequest] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
   const [view, setView] = useState("feed"),
     [category, setCategory] = useState(""),
     [query, setQuery] = useState(""),
@@ -265,12 +270,31 @@ export default function Library() {
     const key = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
         e.preventDefault();
-        document.getElementById("search")?.focus();
+        if (document.querySelector('[role="dialog"]')) return;
+        setView("all");
+        setCategory("");
+        setSearchRequest((n) => n + 1);
       }
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, []);
+  useEffect(() => {
+    if (searchRequest && !["feed", "projects", "profile", "members"].includes(view)) {
+      document.getElementById("search")?.focus();
+      setSearchRequest(0);
+    }
+  }, [searchRequest, view]);
+  const materialDirty = JSON.stringify(draft) !== formBaseline || !!file;
+  useEffect(() => {
+    if (!showForm || !materialDirty) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [showForm, materialDirty]);
+  useEffect(() => { if (showForm && formError) formErrorRef.current?.focus(); }, [showForm, formError]);
+  const isLibraryView = !["feed", "projects", "profile", "members"].includes(view);
+  const hasFilters = !!(category || query || type || author || tag);
   const resources = data?.resources ?? [],
     categories = data?.categories ?? [],
     members = data?.members ?? [];
@@ -314,14 +338,18 @@ export default function Library() {
   );
   const activeCategory = categories.find((c) => c.id === category);
   const navigate = (v: string, c = "") => {
+    window.scrollTo({ top: 0, behavior: "instant" });
     setProjectCreateRequest(0);
     setView(v);
     setCategory(c);
     setTag("");
     setQuery("");
+    setType("");
+    setAuthor("");
   };
   const add = () => {
     setDraft({ ...empty, category });
+    setFormBaseline(JSON.stringify({ ...empty, category }));
     setFile(null);
     setFormError("");
     setShowForm(true);
@@ -349,6 +377,7 @@ export default function Library() {
       category: r.category ?? "",
       tags: tagsOf(r).join(", "),
     });
+    setFormBaseline(JSON.stringify({ id: r.id, title: r.title, description: r.description, url: r.url ?? "", type: r.type, category: r.category ?? "", tags: tagsOf(r).join(", ") }));
     setFile(null);
     setFormError("");
     setShowForm(true);
@@ -561,7 +590,8 @@ export default function Library() {
     setToast("Catálogo exportado. Baixe os anexos pelos materiais.");
   }
   return (
-    <div className="shell">
+    <div className="shell" data-view={view}>
+      <a className="skip-link" href="#main-content">Ir para o conteúdo</a>
       <aside className="sidebar">
         <a className="brand" href="/">
           <span className="brand-mark">
@@ -582,83 +612,22 @@ export default function Library() {
           </div>
           <Lock size={14} />
         </div>
-        <p className="nav-label">BIBLIOTECA</p>
-        <nav aria-label="Biblioteca">
+        <p className="nav-label">NOSSO GRUPO</p>
+        <nav className="primary-navigation" aria-label="Navegação principal">
           {[
-            {
-              id: "feed",
-              label: "Feed",
-              icon: MessageSquare,
-              count: undefined,
-            },
-            {
-              id: "all",
-              label: "Todos os materiais",
-              icon: LibraryIcon,
-              count: resources.length,
-            },
-            {
-              id: "favorites",
-              label: "Meus favoritos",
-              icon: Star,
-              count: resources.filter((r) => r.favorite).length,
-            },
-            {
-              id: "reading",
-              label: "Estou estudando",
-              icon: BookOpen,
-              count: resources.filter((r) => r.reading === "reading").length,
-            },
-            {
-              id: "mine",
-              label: "Minhas contribuições",
-              icon: Upload,
-              count: resources.filter((r) => r.author === data?.user.id).length,
-            },
-          ].map((n) => (
-            <button
-              key={n.id}
-              data-navigation={n.id}
-              className={
-                "nav-item " + (view === n.id && !category ? "active" : "")
-              }
-              onClick={() => navigate(n.id)}
-            >
-              <n.icon size={18} />
-              <span>{n.label}</span>
-              <small>{n.count}</small>
-            </button>
-          ))}
-          <button
-            className="nav-item mobile-members"
-            onClick={() => navigate("members")}
-          >
-            <Users size={18} />
-            <span>Pessoas</span>
-          </button>
-          <button
-            className={
-              "nav-item project-nav " + (view === "projects" ? "active" : "")
-            }
-            onClick={() => navigate("projects")}
-            aria-current={view === "projects" ? "page" : undefined}
-          >
-            <Lightbulb size={18} />
-            <span>Ideias de projetos</span>
-          </button>
-          <button
-            className={
-              "nav-item " +
-              (view === "profile" && selectedProfileId === data?.user.id
-                ? "active"
-                : "")
-            }
-            onClick={() => data && openProfile(data.user.id)}
-            disabled={!data}
-          >
-            <UserRound size={18} />
-            <span>Meu perfil</span>
-          </button>
+            { id: "feed", label: "Feed", icon: MessageSquare },
+            { id: "all", label: "Biblioteca", icon: LibraryIcon },
+            { id: "projects", label: "Projetos", icon: Lightbulb },
+            { id: "members", label: "Pessoas", icon: Users },
+            { id: "profile", label: "Perfil", icon: UserRound },
+          ].map(n => {
+            const active = n.id === "all" ? isLibraryView : n.id === "profile" ? view === "profile" && selectedProfileId === data?.user.id : view === n.id;
+            return <button key={n.id} data-navigation={n.id} className={"nav-item " + (active ? "active" : "")} aria-current={active ? "page" : undefined}
+              disabled={n.id === "profile" && !data} onClick={() => n.id === "profile" ? data && openProfile(data.user.id) : navigate(n.id)}>
+              <n.icon size={20} /><span>{n.label}</span>
+              {n.id === "all" && <small>{data ? resources.length : "…"}</small>}
+            </button>;
+          })}
         </nav>
         <div className="nav-section">
           <p className="nav-label">CATEGORIAS</p>
@@ -703,14 +672,6 @@ export default function Library() {
           )}
         </nav>
         <div className="sidebar-bottom">
-          <button
-            className={"nav-item " + (view === "members" ? "active" : "")}
-            onClick={() => navigate("members")}
-          >
-            <Users size={18} />
-            <span>Pessoas do grupo</span>
-            <small>{members.length}</small>
-          </button>
           <div className="private-note">
             <Lock size={15} />
             <span>Acesso só por convite</span>
@@ -745,6 +706,7 @@ export default function Library() {
       </aside>
       <div className="main">
         <header className="topbar">
+          <a className="mobile-brand" href="/" aria-label="Devoteca, início">devoteca<span>.</span></a>
           <div className="breadcrumb">
             <span>Nosso espaço</span>
             <span>/</span>
@@ -782,19 +744,16 @@ export default function Library() {
             </button>
           </div>
         </header>
-        <main className="content">
+        <main className="content" id="main-content" tabIndex={-1}>
           <div className="page-heading">
             <div>
-              {!["projects", "feed", "profile"].includes(view) && (
-                <p className="eyebrow">CONHECIMENTO COMPARTILHADO</p>
-              )}
               <h1>
                 {view === "members"
                   ? "Pessoas do grupo"
-                  : activeCategory?.name ||
+                  : (isLibraryView ? activeCategory?.name : null) ||
                     (
                       {
-                        all: "Uma boa referência fica.",
+                        all: "Biblioteca do grupo",
                         favorites: "Seus favoritos",
                         reading: "Estou estudando",
                         mine: "Minhas contribuições",
@@ -814,7 +773,7 @@ export default function Library() {
                       : view === "projects"
                         ? "Das referências às próprias criações. Planejem o que vocês querem construir juntos."
                         : view === "all" && !category
-                          ? "Tudo o que vale guardar, em um só lugar."
+                          ? "Links, documentos e repositórios compartilhados pelo grupo."
                           : view === "favorites"
                             ? "As referências que você quer ter sempre por perto."
                             : view === "reading"
@@ -824,7 +783,7 @@ export default function Library() {
                                 : "Explore os materiais desta categoria."}
               </p>
             </div>
-            {!["feed", "profile"].includes(view) && (
+            {(isLibraryView || view === "projects") && (
               <button
                 className="btn primary"
                 onClick={
@@ -891,8 +850,7 @@ export default function Library() {
             <>
               <div className="section-title">
                 <h2>
-                  {members.length} {members.length === 1 ? "pessoa" : "pessoas"}{" "}
-                  neste espaço
+                  {data ? `${members.length} ${members.length === 1 ? "pessoa" : "pessoas"} neste espaço` : "Pessoas do grupo"}
                 </h2>
                 <button
                   className="btn secondary"
@@ -902,6 +860,7 @@ export default function Library() {
                   Convidar amigos
                 </button>
               </div>
+              {loading && !data && <p className="community-loading" role="status"><LoaderCircle size={20} className="spin" /> Carregando pessoas...</p>}
               <div className="member-grid">
                 {members.map((m) => (
                   <article className="member-card" key={m.id}>
@@ -933,54 +892,15 @@ export default function Library() {
             </>
           ) : (
             <>
-              <div className="overview">
-                <div>
-                  <span className="stat-icon">
-                    <LibraryIcon size={19} />
-                  </span>
-                  <span>
-                    <strong>{resources.length}</strong>
-                    <small>materiais no acervo</small>
-                  </span>
-                </div>
-                <div>
-                  <span className="stat-icon purple">
-                    <GitBranch size={19} />
-                  </span>
-                  <span>
-                    <strong>
-                      {resources.filter((r) => r.type === "github").length}
-                    </strong>
-                    <small>repositórios GitHub</small>
-                  </span>
-                </div>
-                <div>
-                  <span className="stat-icon orange">
-                    <Folder size={19} />
-                  </span>
-                  <span>
-                    <strong>{categories.length}</strong>
-                    <small>categorias</small>
-                  </span>
-                </div>
-                <div>
-                  <span className="stat-icon green">
-                    <Users size={19} />
-                  </span>
-                  <span>
-                    <strong>{members.length}</strong>
-                    <small>
-                      {members.length === 1
-                        ? "pessoa contribuindo"
-                        : "pessoas contribuindo"}
-                    </small>
-                  </span>
-                </div>
-              </div>
               <section className="library-section" aria-label="Materiais">
+                <div className="library-shortcuts" role="group" aria-label="Escolher materiais">
+                  {[["all", "Todos"], ["favorites", "Favoritos"], ["reading", "Em estudo"], ["mine", "Minhas contribuições"]].map(([id,label]) =>
+                    <button key={id} className={"pill " + (view === id ? "selected" : "")} aria-pressed={view === id} onClick={() => navigate(id)}>{id === "mine" ? "Meus materiais" : label}</button>
+                  )}
+                </div>
                 <div className="section-title">
                   <h2>
-                    {activeCategory?.name || "Acervo do grupo"}
+                    {activeCategory?.name || "Materiais"}
                     <span>{filtered.length}</span>
                   </h2>
                   <div className="section-actions">
@@ -1019,8 +939,10 @@ export default function Library() {
                       className="icon-btn"
                       aria-label="Atualizar biblioteca"
                       onClick={() => reload()}
+                      disabled={loading}
+                      aria-busy={loading}
                     >
-                      <RefreshCw size={17} />
+                      <RefreshCw size={17} className={loading ? "spin" : ""} />
                     </button>
                   </div>
                 </div>
@@ -1029,7 +951,8 @@ export default function Library() {
                     <Search size={19} />
                     <input
                       id="search"
-                      placeholder="Buscar por título, tag, autor ou link..."
+                      aria-label="Buscar materiais"
+                      placeholder="Buscar título, tag, autor ou link..."
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                     />
@@ -1050,11 +973,15 @@ export default function Library() {
                       ))}
                     </select>
                   </label>
+                  <button className="btn secondary filter-toggle" aria-controls="library-filters" aria-expanded={showFilters} aria-label="Filtros e ordenação dos materiais" onClick={() => setShowFilters(v => !v)}>
+                    <SlidersHorizontal size={16} /> Filtros
+                  </button>
                 </div>
-                <div className="filter-row">
-                  <div className="filter-pills">
+                <div id="library-filters" className={"filter-row " + (showFilters ? "expanded" : "")}>
+                  {allTags.length > 0 && <div className="filter-pills">
                     <button
                       className={"pill " + (!tag ? "selected" : "")}
+                      aria-pressed={!tag}
                       onClick={() => setTag("")}
                     >
                       Todas as tags
@@ -1063,6 +990,7 @@ export default function Library() {
                       <button
                         key={t}
                         className={"pill " + (tag === t ? "selected" : "")}
+                        aria-pressed={tag === t}
                         onClick={() => setTag(tag === t ? "" : t)}
                       >
                         #{t}
@@ -1080,7 +1008,7 @@ export default function Library() {
                         ))}
                       </select>
                     )}
-                  </div>
+                  </div>}
                   <div className="sort-controls">
                     <select
                       aria-label="Filtrar por categoria"
@@ -1105,7 +1033,7 @@ export default function Library() {
                       <option value="">Todos os autores</option>
                       {members.map((m) => (
                         <option key={m.id} value={m.id}>
-                          {m.name.split(" ")[0]}
+                          {m.name}
                         </option>
                       ))}
                     </select>
@@ -1139,7 +1067,8 @@ export default function Library() {
                     </div>
                   </div>
                 </div>
-                {loading ? (
+                {hasFilters && <div className="active-filters" role="status"><span>{filtered.length} {filtered.length === 1 ? "material encontrado" : "materiais encontrados"}</span><button className="text-btn" onClick={() => { setCategory(""); setQuery(""); setType(""); setAuthor(""); setTag(""); }}>Limpar filtros <X size={14} /></button></div>}
+                {loading && !data ? (
                   <div className="empty-state">
                     <LoaderCircle className="spin" size={28} />
                     <h3>Carregando a biblioteca...</h3>
@@ -1171,6 +1100,7 @@ export default function Library() {
                                   ? "Remover dos favoritos"
                                   : "Adicionar aos favoritos"
                               }
+                              aria-pressed={!!r.favorite}
                               onClick={() => patch(r, "favorite", !r.favorite)}
                             >
                               <Star
@@ -1263,12 +1193,12 @@ export default function Library() {
                       <Bookmark size={32} />
                     </span>
                     <h3>
-                      {resources.length
+                      {resources.length && view === "favorites" && !hasFilters ? "Você ainda não tem favoritos." : resources.length && view === "reading" && !hasFilters ? "Seu próximo estudo começa aqui." : resources.length && view === "mine" && !hasFilters ? "Compartilhe sua primeira referência." : resources.length
                         ? "Nenhum material por aqui."
                         : "O acervo começa com uma boa descoberta."}
                     </h3>
                     <p>
-                      {resources.length
+                      {resources.length && view === "favorites" && !hasFilters ? "Marque a estrela de um material para encontrá-lo aqui." : resources.length && view === "reading" && !hasFilters ? "Abra um material e marque seu progresso como Estou estudando." : resources.length && view === "mine" && !hasFilters ? "Adicione um link ou documento para ajudar o grupo." : resources.length
                         ? "Experimente outra busca ou ajuste os filtros."
                         : "Salve aquele repositório, artigo ou documento que merece sair do grupo e ficar à mão."}
                     </p>
@@ -1281,7 +1211,7 @@ export default function Library() {
                           setAuthor("");
                         }}
                       >
-                        Limpar filtros
+                        {hasFilters ? "Limpar filtros" : "Explorar biblioteca"}
                       </button>
                     ) : (
                       <button
@@ -1322,17 +1252,17 @@ export default function Library() {
       </div>
       <Modal
         open={showForm}
-        onClose={() => !busy && setShowForm(false)}
+        onClose={() => { if (busy || githubBusy) return; if (materialDirty && !window.confirm("Descartar as alterações deste material?")) return; setShowForm(false); }}
         title={draft.id ? "Editar material" : "Guardar um material"}
         description="Compartilhe algo que pode ajudar o grupo."
         wide
       >
-        <form onSubmit={save} className="form">
+        <form onSubmit={save} className="form" aria-busy={busy}>
           <label>
             Link
             <div className="link-input">
               <LinkIcon size={18} />
-              <input
+              <input disabled={busy || githubBusy}
                 type="url"
                 maxLength={2048}
                 placeholder="https://github.com/autor/repositorio"
@@ -1358,7 +1288,7 @@ export default function Library() {
           )}
           <label>
             Título *
-            <input
+            <input disabled={busy || githubBusy}
               required
               maxLength={180}
               placeholder="Como vocês vão encontrar este material?"
@@ -1368,7 +1298,7 @@ export default function Library() {
           </label>
           <label>
             Descrição
-            <textarea
+            <textarea disabled={busy || githubBusy}
               rows={3}
               maxLength={2000}
               placeholder="Por que vale guardar? Como ele pode ajudar?"
@@ -1381,7 +1311,7 @@ export default function Library() {
           <div className="form-columns">
             <label>
               Tipo
-              <select
+              <select disabled={busy || githubBusy}
                 value={draft.type}
                 onChange={(e) => setDraft({ ...draft, type: e.target.value })}
               >
@@ -1394,7 +1324,7 @@ export default function Library() {
             </label>
             <label>
               Categoria
-              <select
+              <select disabled={busy || githubBusy}
                 value={draft.category}
                 onChange={(e) =>
                   setDraft({ ...draft, category: e.target.value })
@@ -1411,7 +1341,7 @@ export default function Library() {
           </div>
           <label>
             Tags
-            <input
+            <input disabled={busy || githubBusy}
               maxLength={400}
               placeholder="react, algoritmos, entrevistas"
               value={draft.tags}
@@ -1428,7 +1358,7 @@ export default function Library() {
                   PDF, documentos, planilhas, imagens ou ZIP · até 20 MB
                 </small>
               </span>
-              <input
+              <input disabled={busy || githubBusy}
                 type="file"
                 aria-label="Anexar arquivo"
                 accept=".pdf,.txt,.md,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.zip,.png,.jpg,.jpeg,.webp"
@@ -1446,7 +1376,7 @@ export default function Library() {
             </label>
           )}
           {formError && (
-            <p className="inline-error" role="alert">
+            <p className="inline-error" role="alert" ref={formErrorRef} tabIndex={-1}>
               {formError}
             </p>
           )}
@@ -1465,7 +1395,7 @@ export default function Library() {
               ) : (
                 <Check size={17} />
               )}
-              Salvar material
+              {busy ? "Salvando..." : "Salvar material"}
             </button>
           </div>
         </form>

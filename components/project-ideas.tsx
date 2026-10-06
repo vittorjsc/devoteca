@@ -479,8 +479,10 @@ export function ProjectIdeas({
                 className="icon-btn"
                 aria-label="Atualizar ideias"
                 onClick={reload}
+                disabled={loading}
+                aria-busy={loading}
               >
-                <RefreshCw size={17} />
+                <RefreshCw size={17} className={loading ? "spin" : ""} />
               </button>
             </div>
           </div>
@@ -515,7 +517,7 @@ export function ProjectIdeas({
               Minhas ideias
             </button>
           </div>
-          {loading ? (
+          {loading && !projects.length ? (
             <div className="projects-empty" role="status">
               <LoaderCircle className="spin" size={24} />
               <p>Carregando ideias...</p>

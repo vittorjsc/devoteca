@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-06T23:12:43.6732169Z",
+  "title": "Design System: Devoteca",
+  "extensions": {
+    "shadows": [
+      {
+        "value": "0 2px 3px #173bb51a",
+        "name": "primary-action",
+        "purpose": "Sombra sutil do botão principal."
+      },
+      {
+        "value": "0 5px 20px #1e355209",
+        "name": "resource-hover",
+        "purpose": "Hover dos cartões do acervo."
+      },
+      {
+        "value": "0 25px 90px #0a192748",
+        "name": "dialog",
+        "purpose": "Separação de diálogos."
+      }
+    ],
+    "motion": [
+      {
+        "value": "background 0.15s",
+        "name": "control-background",
+        "purpose": "Navegação e botões; preservar preferência por movimento reduzido."
+      }
+    ],
+    "breakpoints": [
+      {
+        "value": "850px",
+        "name": "mobile-navigation"
+      },
+      {
+        "value": "1050px",
+        "name": "intermediate-layout"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Ação principal",
+      "refersTo": "button-primary",
+      "description": "Botão comum de confirmação ou contribuição.",
+      "css": ".ds-primary { display:inline-flex; align-items:center; justify-content:center; padding:11px 16px; min-height:44px; border:0; border-radius:7px; background:#3558e7; color:#fff; font-family:Inter,\"Segoe UI\",Arial,sans-serif; font-size:14px; font-weight:600; box-shadow:0 2px 3px #173bb51a; cursor:pointer; transition:background 0.15s; } .ds-primary:hover { background:#2748ce; } .ds-primary:focus-visible { outline:3px solid #86a5ff; outline-offset:3px; } .ds-primary:disabled { opacity:0.55; cursor:not-allowed; } @media(prefers-reduced-motion:reduce) { .ds-primary { transition:none; } }",
+      "html": "<button class=\"ds-primary\">Salvar material</button>",
+      "kind": "button"
+    },
+    {
+      "name": "Campo de formulário",
+      "refersTo": "field",
+      "description": "Campo de texto de material com foco visível.",
+      "css": ".ds-label { display:grid; gap:7px; color:#293946; font-family:Inter,\"Segoe UI\",Arial,sans-serif; font-size:14px; } .ds-field { width:100%; min-width:0; border:1px solid #dbe3ea; border-radius:6px; padding:10px 12px; color:#27384a; background:#fff; font:400 16px/1.5 Inter,\"Segoe UI\",Arial,sans-serif; } .ds-field::placeholder { color:var(--text-secondary,#536372); } .ds-field:focus-visible { outline:3px solid #86a5ff; outline-offset:3px; }",
+      "html": "<label class=\"ds-label\">Título<input class=\"ds-field\" placeholder=\"Nome do material\"></label>",
+      "kind": "input"
+    }
+  ],
+  "narrative": {
+    "rules": [],
+    "overview": "A direção atual preserva navegação azul-marinho, indicação ativa em verde-lima e superfícies claras para ler, buscar e contribuir. Captura a interface existente após o refinamento de UX, com o nome Devoteca e o português preservados.",
+    "donts": [
+      "Não copie cinzas da barra lateral para texto auxiliar claro.",
+      "Não remova rótulos da navegação mobile.",
+      "Não altere permissões como parte de um refinamento visual."
+    ],
+    "dos": [
+      "Preserve a navegação principal e os papéis distintos de azul e verde-lima.",
+      "Use controles compartilhados e foco visível.",
+      "Verifique nomes longos e área segura inferior."
+    ],
+    "keyCharacteristics": [
+      "Cinco destinos consistentes",
+      "Azul para ações e verde-lima para identidade",
+      "Conteúdo claro e descrições legíveis",
+      "Foco visível e salvamento protegido"
+    ],
+    "northStar": "Biblioteca de trabalho compartilhada"
+  }
+}

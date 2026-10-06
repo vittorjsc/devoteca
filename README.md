@@ -10,6 +10,10 @@ O projeto organiza repositórios GitHub, artigos, cursos, vídeos, ferramentas e
 
 ## Funcionalidades
 
+A navegação reúne **Feed**, **Biblioteca**, **Projetos**, **Pessoas** e **Perfil**. Em telas menores, as cinco áreas ficam na barra inferior. A biblioteca abre com busca e materiais; use **Todos**, **Favoritos**, **Em estudo** e **Meus materiais** para escolher o acervo. No celular, **Filtros** abre categoria, autor, ordenação e modo de visualização. **Limpar filtros** restaura a busca, e **Ctrl/Cmd + K** abre a biblioteca e foca o campo de pesquisa.
+
+O formulário de material confirma o descarte de alterações, avisa ao sair com um rascunho e mantém os campos bloqueados durante o envio. Carregamentos e filtros não devem apresentar um acervo vazio como se os dados já tivessem sido consultados. A identidade visual e os padrões de interação estão documentados em [DESIGN.md](DESIGN.md).
+
 - Cadastro e edição de materiais com título, descrição, tipo, categoria e tags.
 - Busca por título, descrição, URL, autor e tags, com normalização de acentos.
 - Filtros combinados, ordenação e visualizações em cartões ou lista.
