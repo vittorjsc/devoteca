@@ -22,16 +22,22 @@ export async function GET(req: Request) {
       db.prepare("SELECT * FROM categories ORDER BY name").all(),
       db
         .prepare(
-          "SELECT id,name,joined FROM members WHERE lower(email)<>? ORDER BY joined",
+          "SELECT m.id,COALESCE(p.display_name,m.name) AS name,m.joined,p.avatar AS avatar_id,COALESCE(p.bio,'') AS bio FROM members m LEFT JOIN profiles p ON p.member=m.id WHERE lower(m.email)<>? ORDER BY m.joined",
         )
         .bind(SCREENSHOT_SERVICE_EMAIL)
         .all(),
     ]);
+    const own = members.results.find((m) => m.id === u.userId);
     return json({
       resources: resources.results,
       categories: categories.results,
       members: members.results,
-      user: { id: u.userId, name: u.displayName, admin: u.admin },
+      user: {
+        id: u.userId,
+        name: own?.name || u.displayName,
+        avatar_id: own?.avatar_id || null,
+        admin: u.admin,
+      },
     });
   } catch (e) {
     return fail(e);

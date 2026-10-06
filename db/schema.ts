@@ -15,6 +15,49 @@ export const members = sqliteTable("members", {
   email: text("email").notNull(),
   joined: text("joined").notNull(),
 });
+export const communityMedia = sqliteTable("community_media", {
+  id: text("id").primaryKey(),
+  owner: text("owner")
+    .notNull()
+    .references(() => members.id),
+  kind: text("kind").notNull(),
+  objectKey: text("object_key").notNull(),
+  contentType: text("content_type").notNull(),
+  size: integer("size").notNull(),
+  created: text("created").notNull(),
+});
+export const profiles = sqliteTable("profiles", {
+  member: text("member")
+    .primaryKey()
+    .references(() => members.id, { onDelete: "cascade" }),
+  displayName: text("display_name").notNull(),
+  bio: text("bio").notNull(),
+  avatar: text("avatar").references(() => communityMedia.id, {
+    onDelete: "set null",
+  }),
+  updated: text("updated").notNull(),
+});
+export const posts = sqliteTable(
+  "posts",
+  {
+    id: text("id").primaryKey(),
+    author: text("author")
+      .notNull()
+      .references(() => members.id),
+    body: text("body").notNull(),
+    image: text("image").references(() => communityMedia.id, {
+      onDelete: "set null",
+    }),
+    imageAlt: text("image_alt").notNull(),
+    created: text("created").notNull(),
+    updated: text("updated").notNull(),
+  },
+  (t) => [
+    index("idx_posts_created").on(t.created, t.id),
+    index("idx_posts_author_created").on(t.author, t.created),
+    uniqueIndex("idx_posts_image").on(t.image),
+  ],
+);
 export const categories = sqliteTable(
   "categories",
   {

@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Dialog as D } from "radix-ui";
 import { TranslationPanel } from "@/components/translation-panel";
 import { ProjectIdeas } from "@/components/project-ideas";
+import { Community } from "@/components/community";
+import { CommunityAvatar } from "@/components/community-avatar";
 import { Languages } from "lucide-react";
 import {
   BookOpen,
@@ -39,6 +41,7 @@ import {
   Hash,
   Command,
   Lightbulb,
+  UserRound,
 } from "lucide-react";
 type Resource = {
   id: string;
@@ -60,7 +63,13 @@ type Resource = {
   comment_count: number;
 };
 type Category = { id: string; name: string; color: string };
-type Member = { id: string; name: string; joined: string };
+type Member = {
+  id: string;
+  name: string;
+  joined: string;
+  avatar_id: string | null;
+  bio: string;
+};
 type Comment = {
   id: string;
   body: string;
@@ -72,7 +81,7 @@ type State = {
   resources: Resource[];
   categories: Category[];
   members: Member[];
-  user: { id: string; name: string; admin: boolean };
+  user: { id: string; name: string; admin: boolean; avatar_id: string | null };
 };
 type Draft = {
   id?: string;
@@ -190,7 +199,7 @@ export default function Library() {
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [toast, setToast] = useState("");
-  const [view, setView] = useState("all"),
+  const [view, setView] = useState("feed"),
     [category, setCategory] = useState(""),
     [query, setQuery] = useState(""),
     [type, setType] = useState(""),
@@ -209,6 +218,11 @@ export default function Library() {
     [categoryColor, setCategoryColor] = useState("blue");
   const [translation, setTranslation] = useState<Resource | null>(null);
   const [projectCreateRequest, setProjectCreateRequest] = useState(0);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
+    null,
+  );
+  const [profileDirty, setProfileDirty] = useState(false);
+  const [projectFocusId, setProjectFocusId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Resource | null>(null),
     [comments, setComments] = useState<Comment[]>([]),
     [comment, setComment] = useState(""),
@@ -311,6 +325,18 @@ export default function Library() {
     setFile(null);
     setFormError("");
     setShowForm(true);
+  };
+  const openProfile = (id: string) => {
+    if (
+      profileDirty &&
+      selectedProfileId !== id &&
+      !window.confirm(
+        "Descartar as alterações do perfil para abrir outro perfil?",
+      )
+    )
+      return;
+    setSelectedProfileId(id);
+    navigate("profile");
   };
   const edit = (r: Resource) => {
     setSelected(null);
@@ -560,6 +586,12 @@ export default function Library() {
         <nav aria-label="Biblioteca">
           {[
             {
+              id: "feed",
+              label: "Feed",
+              icon: MessageSquare,
+              count: undefined,
+            },
+            {
               id: "all",
               label: "Todos os materiais",
               icon: LibraryIcon,
@@ -613,6 +645,19 @@ export default function Library() {
           >
             <Lightbulb size={18} />
             <span>Ideias de projetos</span>
+          </button>
+          <button
+            className={
+              "nav-item " +
+              (view === "profile" && selectedProfileId === data?.user.id
+                ? "active"
+                : "")
+            }
+            onClick={() => data && openProfile(data.user.id)}
+            disabled={!data}
+          >
+            <UserRound size={18} />
+            <span>Meu perfil</span>
           </button>
         </nav>
         <div className="nav-section">
@@ -671,15 +716,23 @@ export default function Library() {
             <span>Acesso só por convite</span>
           </div>
           <div className="profile">
-            <span className="avatar">
-              {initials(data?.user.name || "Você")}
-            </span>
-            <div>
-              <strong>{data?.user.name?.split("@")[0] || "Sua conta"}</strong>
-              <small>
-                {data?.user.admin ? "Administrador" : "Colaborador"}
-              </small>
-            </div>
+            <button
+              className="sidebar-profile-link"
+              onClick={() => data && openProfile(data.user.id)}
+              disabled={!data}
+              aria-label="Editar ou ver meu perfil"
+            >
+              <CommunityAvatar
+                name={data?.user.name || "Você"}
+                imageId={data?.user.avatar_id}
+              />
+              <span>
+                <strong>{data?.user.name?.split("@")[0] || "Sua conta"}</strong>
+                <small>
+                  {data?.user.admin ? "Administrador" : "Colaborador"}
+                </small>
+              </span>
+            </button>
             <a
               href="/signout-with-chatgpt?return_to=/"
               target="_top"
@@ -700,10 +753,22 @@ export default function Library() {
                 ? "Pessoas"
                 : view === "projects"
                   ? "Projetos"
-                  : "Biblioteca"}
+                  : view === "feed"
+                    ? "Feed"
+                    : view === "profile"
+                      ? "Perfil"
+                      : "Biblioteca"}
             </strong>
           </div>
           <div className="top-actions">
+            <button
+              className="text-btn top-profile-btn"
+              onClick={() => data && openProfile(data.user.id)}
+              disabled={!data}
+            >
+              <UserRound size={16} />
+              Meu perfil
+            </button>
             <span className="private-badge">
               <Lock size={13} />
               Privado
@@ -720,7 +785,7 @@ export default function Library() {
         <main className="content">
           <div className="page-heading">
             <div>
-              {view !== "projects" && (
+              {!["projects", "feed", "profile"].includes(view) && (
                 <p className="eyebrow">CONHECIMENTO COMPARTILHADO</p>
               )}
               <h1>
@@ -734,37 +799,45 @@ export default function Library() {
                         reading: "Estou estudando",
                         mine: "Minhas contribuições",
                         projects: "Ideias de projetos",
+                        feed: "Feed da comunidade",
+                        profile: "Perfil",
                       } as Record<string, string>
                     )[view]}
               </h1>
               <p>
                 {view === "members"
                   ? "Quem já entrou neste espaço e está construindo a biblioteca com você."
-                  : view === "projects"
-                    ? "Das referências às próprias criações. Planejem o que vocês querem construir juntos."
-                    : view === "all" && !category
-                      ? "Tudo o que vale guardar, em um só lugar."
-                      : view === "favorites"
-                        ? "As referências que você quer ter sempre por perto."
-                        : view === "reading"
-                          ? "Continue de onde parou."
-                          : view === "mine"
-                            ? "Os materiais que você compartilhou com o grupo."
-                            : "Explore os materiais desta categoria."}
+                  : view === "feed"
+                    ? "As novidades e conversas do nosso grupo."
+                    : view === "profile"
+                      ? "Conheça quem está construindo esta comunidade."
+                      : view === "projects"
+                        ? "Das referências às próprias criações. Planejem o que vocês querem construir juntos."
+                        : view === "all" && !category
+                          ? "Tudo o que vale guardar, em um só lugar."
+                          : view === "favorites"
+                            ? "As referências que você quer ter sempre por perto."
+                            : view === "reading"
+                              ? "Continue de onde parou."
+                              : view === "mine"
+                                ? "Os materiais que você compartilhou com o grupo."
+                                : "Explore os materiais desta categoria."}
               </p>
             </div>
-            <button
-              className="btn primary"
-              onClick={
-                view === "projects"
-                  ? () => setProjectCreateRequest((v) => v + 1)
-                  : add
-              }
-              disabled={!data}
-            >
-              <Plus size={18} />
-              {view === "projects" ? "Nova ideia" : "Adicionar material"}
-            </button>
+            {!["feed", "profile"].includes(view) && (
+              <button
+                className="btn primary"
+                onClick={
+                  view === "projects"
+                    ? () => setProjectCreateRequest((v) => v + 1)
+                    : add
+                }
+                disabled={!data}
+              >
+                <Plus size={18} />
+                {view === "projects" ? "Nova ideia" : "Adicionar material"}
+              </button>
+            )}
           </div>
           {error && (
             <div className="alert" role="alert">
@@ -779,9 +852,42 @@ export default function Library() {
               user={data?.user ?? null}
               resources={resources}
               createRequest={projectCreateRequest}
+              focusId={projectFocusId}
             />
           </div>
-          {view === "projects" ? null : view === "members" ? (
+          <Community
+            view={view}
+            user={data?.user ?? null}
+            profileId={selectedProfileId}
+            onOpenProfile={openProfile}
+            onProfileSaved={reload}
+            onProfileDirty={setProfileDirty}
+            onCompose={() => navigate("feed")}
+            onOpenResource={async (id) => {
+              let resource = resources.find((r) => r.id === id);
+              if (!resource) {
+                const fresh = await reload();
+                if (!fresh) {
+                  setToast(
+                    "Não foi possível abrir o material. Tente novamente.",
+                  );
+                  return;
+                }
+                resource = fresh.resources.find((r) => r.id === id);
+              }
+              if (resource) openDetail(resource);
+              else
+                setToast(
+                  "Este material foi removido. Atualize o feed para ver as novidades.",
+                );
+            }}
+            onOpenProject={(id) => {
+              setProjectFocusId(id);
+              navigate("projects");
+            }}
+          />
+          {["projects", "feed", "profile"].includes(view) ? null : view ===
+            "members" ? (
             <>
               <div className="section-title">
                 <h2>
@@ -799,10 +905,28 @@ export default function Library() {
               <div className="member-grid">
                 {members.map((m) => (
                   <article className="member-card" key={m.id}>
-                    <span className="avatar large">{initials(m.name)}</span>
-                    <h3>{m.name}</h3>
+                    <CommunityAvatar
+                      size="large"
+                      name={m.name}
+                      imageId={m.avatar_id}
+                    />
+                    <h3>
+                      <button
+                        className="member-profile-name"
+                        onClick={() => openProfile(m.id)}
+                      >
+                        {m.name}
+                      </button>
+                    </h3>
+                    {m.bio && <p className="member-bio">{m.bio}</p>}
                     <p>{m.id === data?.user.id ? "Você" : "Colaborador"}</p>
                     <small>Entrou em {date(m.joined)}</small>
+                    <button
+                      className="text-btn member-view-profile"
+                      onClick={() => openProfile(m.id)}
+                    >
+                      Ver perfil
+                    </button>
                   </article>
                 ))}
               </div>

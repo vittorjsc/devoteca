@@ -23,6 +23,9 @@ O projeto organiza repositórios GitHub, artigos, cursos, vídeos, ferramentas e
 - Edição das ideias por todos os convidados, referência a materiais do acervo, busca, filtros e exportação JSON.
 - Importação de até 50 links por lote e exportação do catálogo em JSON.
 - Interface responsiva em português.
+- Feed cronológico com publicações de texto e fotos, materiais da biblioteca e ideias de projetos, com filtros e paginação.
+- Perfil pessoal com nome, foto e biografia, além do histórico de contribuições de cada membro.
+- Publicações editáveis pelo autor ou administrador; perfis editáveis apenas pela própria pessoa.
 
 ## Tecnologias e arquitetura
 
@@ -49,6 +52,7 @@ npm run install:ci
 npm run build
 npm run db:migrate:local
 npm run db:migrate:projects
+npm run db:migrate:community
 npm run dev
 ```
 
@@ -70,12 +74,17 @@ Em outro terminal:
 ```sh
 npm run test:integration
 npm run test:projects
+npm run test:community
 node --experimental-strip-types --test tests/translation.test.mjs
 ```
 
 Os testes cobrem login obrigatório, cadastro/edição/exclusão, duplicatas, URLs inválidas, isolamento entre autores, favoritos e progresso individuais, comentários, exclusão em cascata, proteção de origem e envio/download de anexos. O script recusa destinos fora de localhost. Os cabeçalhos de identidade simulados são exclusivos do teste do Worker local.
 
 Os testes de projetos verificam o acesso privado, a edição compartilhada, a validação dos campos e links, a exclusão pelo autor e a preservação das ideias quando um material de inspiração é removido. Para uma cópia local já existente, aplique a migração `db:migrate:projects` apenas uma vez antes de usar a nova área. Na interface, abra **Ideias de projetos → Nova ideia**. Todos os convidados podem editar; a exclusão é reservada ao autor ou administrador.
+
+Os testes da comunidade verificam o feed combinado em ordem cronológica, a paginação, a persistência dos perfis, as permissões de edição e exclusão, a privacidade das fotos e sua remoção quando deixam de ser usadas. Para uma cópia local já existente, aplique `db:migrate:community` uma única vez depois das migrações anteriores.
+
+Na aba **Feed**, escreva uma mensagem e use **Adicionar foto → Publicar**. Cada post aceita até 3.000 caracteres e uma foto JPG, PNG ou WebP de até 5 MB. **Meu perfil → Editar perfil** permite mudar nome (até 60 caracteres), biografia (até 500) e foto. Clique no autor para ver suas contribuições. As fotos são servidas por uma rota autenticada; uploads ainda não publicados ficam disponíveis apenas para seu dono. O feed atualiza a primeira página quando visível; ao carregar histórico, os itens permanecem abertos até atualizar manualmente ou trocar de filtro.
 
 O workflow de CI instala as dependências fixadas no lockfile, verifica os tipos, testa a criação dos links de tradução e compila a aplicação. Os testes de integração são executados com o Worker e o banco locais pelo procedimento acima.
 

@@ -15,6 +15,13 @@
       "when": 1791205765918,
       "tag": "0001_careless_lily_hollister",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791313961923,
+      "tag": "0002_white_prodigy",
+      "breakpoints": true
     }
   ]
 }

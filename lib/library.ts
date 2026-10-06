@@ -1,8 +1,6 @@
 import { env } from "cloudflare:workers";
 import { getChatGPTUser } from "@/app/chatgpt-auth";
-export const OWNER_EMAIL = (
-  env.DEVOTECA_ADMIN_EMAIL || "seedy@sites.test"
-).toLowerCase();
+export const OWNER_EMAIL = env.DEVOTECA_ADMIN_EMAIL || 'seedy@sites.test';
 export const SCREENSHOT_SERVICE_EMAIL =
   "sites-screenshot-service-noreply@chatgpt.com";
 export function database() {
@@ -58,7 +56,7 @@ export function fail(error: unknown) {
     503,
   );
 }
-export const resourceQuery = `SELECT r.*,m.name AS author_name,EXISTS(SELECT 1 FROM favorites f WHERE f.resource=r.id AND f.member=?) AS favorite,COALESCE((SELECT status FROM readings s WHERE s.resource=r.id AND s.member=?),'unread') AS reading,(SELECT COUNT(*) FROM comments c WHERE c.resource=r.id) AS comment_count FROM resources r JOIN members m ON m.id=r.author ORDER BY r.created DESC`;
+export const resourceQuery = `SELECT r.*,COALESCE(p.display_name,m.name) AS author_name,EXISTS(SELECT 1 FROM favorites f WHERE f.resource=r.id AND f.member=?) AS favorite,COALESCE((SELECT status FROM readings s WHERE s.resource=r.id AND s.member=?),'unread') AS reading,(SELECT COUNT(*) FROM comments c WHERE c.resource=r.id) AS comment_count FROM resources r JOIN members m ON m.id=r.author LEFT JOIN profiles p ON p.member=m.id ORDER BY r.created DESC`;
 export function textValue(v: unknown, max: number, required = false) {
   if (typeof v !== "string") {
     if (required) throw new ApiError("Preencha os campos obrigatórios.");

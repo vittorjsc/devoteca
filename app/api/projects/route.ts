@@ -17,8 +17,8 @@ export async function GET(req: Request) {
     await identity(req);
     const result = await database()
       .prepare(
-        `SELECT p.*,m.name AS author_name,r.title AS source_title,COALESCE(r.url,CASE WHEN r.file_key IS NOT NULL THEN '/api/files?id='||r.id END) AS source_url
-      FROM project_ideas p JOIN members m ON m.id=p.author LEFT JOIN resources r ON r.id=p.source_resource
+        `SELECT p.*,COALESCE(pr.display_name,m.name) AS author_name,r.title AS source_title,COALESCE(r.url,CASE WHEN r.file_key IS NOT NULL THEN '/api/files?id='||r.id END) AS source_url
+      FROM project_ideas p JOIN members m ON m.id=p.author LEFT JOIN profiles pr ON pr.member=m.id LEFT JOIN resources r ON r.id=p.source_resource
       ORDER BY p.updated DESC,p.id`,
       )
       .all();

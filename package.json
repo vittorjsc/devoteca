@@ -16,6 +16,8 @@
     "db:migrate:local": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_nappy_tiger_shark.sql",
     "test:integration": "node tests/integration.mjs",
     "test:projects": "node tests/projects.mjs",
+    "test:community": "node tests/community.mjs",
+    "db:migrate:community": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_white_prodigy.sql",
     "db:migrate:projects": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_careless_lily_hollister.sql"
   },
   "dependencies": {

@@ -98,10 +98,12 @@ export function ProjectIdeas({
   user,
   resources,
   createRequest,
+  focusId,
 }: {
   user: User | null;
   resources: Resource[];
   createRequest: number;
+  focusId?: string | null;
 }) {
   const [projects, setProjects] = useState<Project[]>([]),
     [loading, setLoading] = useState(true),
@@ -129,6 +131,17 @@ export function ProjectIdeas({
       setLoading(false);
     }
   }, []);
+  useEffect(() => {
+    if (!focusId) return;
+    if (dirty && !window.confirm("Descartar o rascunho para abrir esta ideia?"))
+      return;
+    setDraft(null);
+    setQuery("");
+    setStage("");
+    setMine(false);
+    setExpanded(focusId);
+    reload();
+  }, [focusId]);
   useEffect(() => {
     if (user) reload();
   }, [reload, user?.id]);
