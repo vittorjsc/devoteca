@@ -17,4 +17,16 @@ jobs:
       - run: npm run install:ci
       - run: npm run typecheck
       - run: node --experimental-strip-types --test tests/translation.test.mjs
+      - run: npm audit --omit=dev
       - run: npm run build
+      - name: Verify private API and security boundaries
+        run: |
+          for migration in drizzle/*.sql; do
+            node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file "$migration"
+          done
+          npm start -- --port 8787 > "$RUNNER_TEMP/devoteca-worker.log" 2>&1 &
+          node --input-type=module -e 'for(let i=0;i<60;i++){try{const r=await fetch("http://127.0.0.1:8787/api/library");if(r.status===401)process.exit(0);}catch{}await new Promise(r=>setTimeout(r,1000));}process.exit(1);'
+          npm run test:integration
+          npm run test:projects
+          npm run test:community
+      - run: npm run test:security

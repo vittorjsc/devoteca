@@ -15,6 +15,12 @@ export const members = sqliteTable("members", {
   email: text("email").notNull(),
   joined: text("joined").notNull(),
 });
+export const securityLimits = sqliteTable("security_limits", {
+  member: text("member").notNull(),
+  purpose: text("purpose").notNull(),
+  window: integer("window").notNull(),
+  used: integer("used").notNull(),
+}, t => [primaryKey({ columns: [t.member, t.purpose] })]);
 export const communityMedia = sqliteTable("community_media", {
   id: text("id").primaryKey(),
   owner: text("owner")

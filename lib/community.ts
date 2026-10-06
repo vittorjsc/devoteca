@@ -1,36 +1,10 @@
-import { ApiError, bucket, database, textValue } from "@/lib/library";
+import { ApiError, bucket, database, textValue, bodyBytes, memberName } from "@/lib/library";
+export { objectBody } from "@/lib/library";
 
 export const IMAGE_LIMIT = 5 * 1024 * 1024;
-export async function objectBody(req: Request) {
-  const value: unknown = await req.json().catch(() => {
-    throw new ApiError("Não foi possível ler os campos. Tente novamente.");
-  });
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new ApiError("Revise os campos.");
-  return value as Record<string, unknown>;
-}
 export async function imageBytes(req: Request) {
-  if (!req.body) throw new ApiError("Selecione uma foto.");
-  const reader = req.body.getReader(),
-    chunks: Uint8Array[] = [];
-  let size = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    size += value.byteLength;
-    if (size > IMAGE_LIMIT) {
-      await reader.cancel();
-      throw new ApiError("A foto deve ter até 5 MB.", 413);
-    }
-    chunks.push(value);
-  }
+  const bytes = await bodyBytes(req, IMAGE_LIMIT), size = bytes.length;
   if (!size) throw new ApiError("A foto está vazia.");
-  const bytes = new Uint8Array(size);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.length;
-  }
   let type: string | null = null;
   if (
     size >= 8 &&
@@ -94,15 +68,15 @@ export async function cleanupImage(id: string | null) {
   if (removed) {
     try {
       await bucket().delete(removed.object_key);
-    } catch (e) {
-      console.error("Could not clean up unreferenced community image", e);
+    } catch {
+      console.error("Could not clean up unreferenced community image");
     }
   }
 }
 export async function profile(member: string) {
   const result = await database()
     .prepare(
-      `SELECT m.id,COALESCE(p.display_name,m.name) AS name,COALESCE(p.bio,'') AS bio,p.avatar AS avatar_id,m.joined FROM members m LEFT JOIN profiles p ON p.member=m.id WHERE m.id=?`,
+      `SELECT m.id,COALESCE(p.display_name,${memberName}) AS name,COALESCE(p.bio,'') AS bio,p.avatar AS avatar_id,m.joined FROM members m LEFT JOIN profiles p ON p.member=m.id WHERE m.id=?`,
     )
     .bind(member)
     .first();

@@ -7,6 +7,8 @@ import {
   fail,
   textValue,
   validateUrl,
+  objectBody,
+  memberName,
 } from "@/lib/library";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +19,7 @@ export async function GET(req: Request) {
     await identity(req);
     const result = await database()
       .prepare(
-        `SELECT p.*,COALESCE(pr.display_name,m.name) AS author_name,r.title AS source_title,COALESCE(r.url,CASE WHEN r.file_key IS NOT NULL THEN '/api/files?id='||r.id END) AS source_url
+        `SELECT p.*,COALESCE(pr.display_name,${memberName}) AS author_name,r.title AS source_title,COALESCE(r.url,CASE WHEN r.file_key IS NOT NULL THEN '/api/files?id='||r.id END) AS source_url
       FROM project_ideas p JOIN members m ON m.id=p.author LEFT JOIN profiles pr ON pr.member=m.id LEFT JOIN resources r ON r.id=p.source_resource
       ORDER BY p.updated DESC,p.id`,
       )
@@ -33,14 +35,7 @@ export async function POST(req: Request) {
     const user = await identity(req);
     await register(user);
     const db = database();
-    const parsed: unknown = await req.json().catch(() => {
-      throw new ApiError(
-        "Não foi possível ler os campos. Tente salvar novamente.",
-      );
-    });
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
-      throw new ApiError("Revise os campos da ideia.");
-    const b = parsed as Record<string, unknown>;
+    const b = await objectBody(req);
     const suppliedId = textValue(b.id, 100);
     const existing = suppliedId
       ? await db

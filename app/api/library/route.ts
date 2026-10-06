@@ -10,7 +10,12 @@ import {
   validateUrl,
   bucket,
   SCREENSHOT_SERVICE_EMAIL,
+  objectBody,
+  resourceForm,
+  memberName,
+  uploadBudget,
 } from "@/lib/library";
+import { validateDocument } from "@/lib/uploads";
 export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
@@ -22,7 +27,7 @@ export async function GET(req: Request) {
       db.prepare("SELECT * FROM categories ORDER BY name").all(),
       db
         .prepare(
-          "SELECT m.id,COALESCE(p.display_name,m.name) AS name,m.joined,p.avatar AS avatar_id,COALESCE(p.bio,'') AS bio FROM members m LEFT JOIN profiles p ON p.member=m.id WHERE lower(m.email)<>? ORDER BY m.joined",
+          `SELECT m.id,COALESCE(p.display_name,${memberName}) AS name,m.joined,p.avatar AS avatar_id,COALESCE(p.bio,'') AS bio FROM members m LEFT JOIN profiles p ON p.member=m.id WHERE lower(m.email)<>? ORDER BY m.joined`,
         )
         .bind(SCREENSHOT_SERVICE_EMAIL)
         .all(),
@@ -52,7 +57,7 @@ export async function saveResource(req: Request, providedForm?: FormData) {
     const u = await identity(req);
     await register(u);
     const db = database();
-    const form = providedForm ?? (await req.formData());
+    const form = providedForm ?? (await resourceForm(req));
     const id = textValue(form.get("id"), 100) || crypto.randomUUID();
     const existing = await db
       .prepare("SELECT * FROM resources WHERE id=?")
@@ -133,11 +138,14 @@ export async function saveResource(req: Request, providedForm?: FormData) {
         throw new ApiError(
           "Formato não permitido. Use PDF, documento, planilha, imagem ou ZIP.",
         );
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      validateDocument(file.name, bytes);
+      await uploadBudget(u.userId, bytes.length);
       fileKey = "documents/" + crypto.randomUUID();
       fileName = file.name.slice(0, 180);
       fileSize = file.size;
       fileType = file.type || "application/octet-stream";
-      await bucket().put(fileKey, await file.arrayBuffer(), {
+      await bucket().put(fileKey, bytes, {
         httpMetadata: { contentType: "application/octet-stream" },
       });
       uploadedKey = fileKey;
@@ -199,7 +207,7 @@ export async function PATCH(req: Request) {
   try {
     const u = await identity(req);
     const db = database();
-    const b = (await req.json()) as Record<string, any>;
+    const b = await objectBody(req);
     const id = textValue(b.id, 100, true);
     if (
       !(await db
@@ -219,6 +227,7 @@ export async function PATCH(req: Request) {
         .run();
     } else if (
       b.action === "reading" &&
+      typeof b.value === "string" &&
       ["unread", "reading", "done"].includes(b.value)
     ) {
       await db

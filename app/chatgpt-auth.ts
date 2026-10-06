@@ -25,15 +25,8 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   if (!email) return null;
   if (!userId) {
     // Private Sites may forward verified email without the optional ID header.
-    const digest = await crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode("devoteca:" + email.toLowerCase()),
-    );
-    userId =
-      "email_" +
-      Array.from(new Uint8Array(digest), (b) =>
-        b.toString(16).padStart(2, "0"),
-      ).join("");
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("devoteca:" + email.toLowerCase()));
+    userId = "email_" + Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
   }
 
   const encodedFullName = requestHeaders.get(USER_FULL_NAME_HEADER);
@@ -45,7 +38,7 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
 
   return {
     userId,
-    displayName: fullName ?? email,
+    displayName: fullName || "Membro da Devoteca",
     email,
     fullName,
   };

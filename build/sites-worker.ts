@@ -1,9 +1,13 @@
 import handler from "vinext/server/fetch-handler";
 import { runWithConnectorBinding } from "../lib/connector-context";
 import type { ConnectorBinding } from "../lib/connector-contract.mjs";
+import { secureResponse, sameOriginWrite } from "../lib/security-headers";
 
 export default {
-  fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
+  async fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
+    // Reject hostile or opaque origins before framework request parsing.
+    if (!["GET", "HEAD", "OPTIONS"].includes(request.method) && !sameOriginWrite(request))
+      return secureResponse(Response.json({ error: "Origem não permitida." }, { status: 403 }), true);
     let binding = ctx.props?.CONNECTORS;
     // Local preview emulates the same request-scoped capability. This branch and
     // the auxiliary service binding are absent from production builds.
@@ -23,6 +27,7 @@ export default {
         },
       };
     }
-    return runWithConnectorBinding(binding, () => handler.fetch(request, env, ctx));
+    const response = await runWithConnectorBinding(binding, () => handler.fetch(request, env, ctx));
+    return secureResponse(response, new URL(request.url).pathname.startsWith("/api/"));
   },
 };

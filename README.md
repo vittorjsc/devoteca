@@ -53,6 +53,7 @@ npm run build
 npm run db:migrate:local
 npm run db:migrate:projects
 npm run db:migrate:community
+npm run db:migrate:security
 npm run dev
 ```
 
@@ -66,6 +67,9 @@ O administrador local padrão é `seedy@sites.test`. Para configurar outra ident
 npm run typecheck
 npm run build
 npm run db:migrate:local
+npm run db:migrate:projects
+npm run db:migrate:community
+npm run db:migrate:security
 npm start -- --port 8787
 ```
 
@@ -75,6 +79,7 @@ Em outro terminal:
 npm run test:integration
 npm run test:projects
 npm run test:community
+npm run test:security
 node --experimental-strip-types --test tests/translation.test.mjs
 ```
 
@@ -86,7 +91,7 @@ Os testes da comunidade verificam o feed combinado em ordem cronológica, a pagi
 
 Na aba **Feed**, escreva uma mensagem e use **Adicionar foto → Publicar**. Cada post aceita até 3.000 caracteres e uma foto JPG, PNG ou WebP de até 5 MB. **Meu perfil → Editar perfil** permite mudar nome (até 60 caracteres), biografia (até 500) e foto. Clique no autor para ver suas contribuições. As fotos são servidas por uma rota autenticada; uploads ainda não publicados ficam disponíveis apenas para seu dono. O feed atualiza a primeira página quando visível; ao carregar histórico, os itens permanecem abertos até atualizar manualmente ou trocar de filtro.
 
-O workflow de CI instala as dependências fixadas no lockfile, verifica os tipos, testa a criação dos links de tradução e compila a aplicação. Os testes de integração são executados com o Worker e o banco locais pelo procedimento acima.
+O workflow de CI instala as dependências fixadas no lockfile, verifica os tipos, testa os links de tradução, audita dependências de produção, compila a aplicação e executa os testes das APIs contra um Worker com banco local descartável. Os limites, proteções e pendências conhecidas estão em [SECURITY.md](SECURITY.md).
 
 ## Estrutura do código
 

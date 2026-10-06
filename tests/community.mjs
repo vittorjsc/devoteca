@@ -19,7 +19,7 @@ const users = {
 async function call(path, options = {}, who = "alice", status = 200) {
   const response = await fetch(origin + path, {
     ...options,
-    headers: { ...users[who], ...options.headers },
+    headers: { Origin: origin, ...users[who], ...options.headers },
   });
   const raw = await response.text();
   let data;

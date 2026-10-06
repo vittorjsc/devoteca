@@ -5,6 +5,7 @@ import {
   json,
   fail,
   textValue,
+  memberName,
 } from "@/lib/library";
 export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
@@ -36,7 +37,7 @@ export async function GET(req: Request) {
     }
     const result = await database()
       .prepare(
-        `SELECT f.*,COALESCE(p.display_name,m.name) AS author_name,p.avatar AS avatar_id FROM (
+        `SELECT f.*,COALESCE(p.display_name,${memberName}) AS author_name,p.avatar AS avatar_id FROM (
       SELECT 'post' AS kind,id,author,created,updated,'' AS title,body,NULL AS url,NULL AS resource_type,NULL AS status,image AS image_id,image_alt FROM posts
       UNION ALL SELECT 'resource',id,author,created,updated,title,description,url,type,NULL,NULL,'' FROM resources
       UNION ALL SELECT 'project',id,author,created,updated,title,description,NULL,NULL,status,NULL,'' FROM project_ideas

@@ -7,6 +7,7 @@ import {
   json,
   fail,
   textValue,
+  uploadBudget,
 } from "@/lib/library";
 import { imageBytes, cleanupImage } from "@/lib/community";
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ export async function PUT(req: Request) {
       throw new ApiError("Selecione a finalidade da foto.");
     const { bytes, type } = await imageBytes(req),
       id = crypto.randomUUID();
+    await uploadBudget(user.userId, bytes.length);
     objectKey = "community/" + id;
     await bucket().put(objectKey, bytes, {
       httpMetadata: { contentType: type },

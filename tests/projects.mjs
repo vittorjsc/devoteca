@@ -15,7 +15,7 @@ const people = {
 async function call(path, options = {}, person = "alice", expected = 200) {
   const response = await fetch(origin + path, {
     ...options,
-    headers: { ...people[person], ...options.headers },
+    headers: { Origin: origin, ...people[person], ...options.headers },
   });
   const data = await response.json();
   assert.equal(response.status, expected, JSON.stringify(data));
